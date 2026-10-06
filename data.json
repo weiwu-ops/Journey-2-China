@@ -1,0 +1,583 @@
+{
+  "settings": {
+    "title": "中国之旅 ",
+    "subtitle": "Journey to China",
+    "pointsPerStation": 10
+  },
+  "mainMap": {
+    "id": "main",
+    "name": "冒险主页",
+    "bgImage": "/uploads/1791262956645_90061436-fbc9-4af9-b349-c5052ef1f8b5.jfif",
+    "stations": [
+      {
+        "id": "s1",
+        "name": "北京",
+        "x": 68.20755004882812,
+        "y": 44.330286104597484,
+        "targetSubMap": "beijing",
+        "lineType": "straight"
+      },
+      {
+        "id": "s2",
+        "name": "上海",
+        "x": 77.16981419977152,
+        "y": 63.660586724784764,
+        "targetSubMap": "city_1791263757424",
+        "lineType": "arc"
+      },
+      {
+        "id": "st_1791262916583_f5bky",
+        "name": "香港",
+        "x": 71.22641509433963,
+        "y": 83.437936901187,
+        "targetSubMap": "city_1791263766711",
+        "lineType": "arc"
+      },
+      {
+        "id": "st_1791262979191_ohbqa",
+        "name": "重庆",
+        "x": 59.43396226415094,
+        "y": 76.88284027975297,
+        "targetSubMap": "city_1791263773485",
+        "lineType": "arc"
+      },
+      {
+        "id": "st_1791262979191_jggd5",
+        "name": "西安",
+        "x": 59.33962408101784,
+        "y": 55.683398449200624,
+        "targetSubMap": "city_1791263760720",
+        "lineType": "arc"
+      },
+      {
+        "id": "st_1791263041370_i9mxd",
+        "name": "成都",
+        "x": 43.584909978902566,
+        "y": 70.04880790452042,
+        "targetSubMap": "city_1791263770381",
+        "lineType": "curve"
+      },
+      {
+        "id": "st_1791263041371_jj6e9",
+        "name": "哈尔滨",
+        "x": 82.16980988124631,
+        "y": 25.139470537078484,
+        "targetSubMap": "city_1791263781064",
+        "lineType": "arc"
+      }
+    ]
+  },
+  "subMaps": [
+    {
+      "id": "beijing",
+      "name": "北京",
+      "bgImage": "/uploads/1791297380441_图片1.jpg",
+      "stations": [
+        {
+          "id": "b1",
+          "name": "故宫",
+          "x": 45.420871267518194,
+          "y": 51.96491446274215,
+          "lineType": "straight"
+        },
+        {
+          "id": "b2",
+          "name": "天坛",
+          "x": 50.85297392740742,
+          "y": 75.58841022614035,
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791293349751_xlq4o",
+          "name": "颐和园",
+          "x": 32.3120058297816,
+          "y": 35.74072497323113,
+          "targetSubMap": "",
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791293349751_gdm87",
+          "name": "环球影城",
+          "x": 75.45453718761743,
+          "y": 66.83142512946671,
+          "targetSubMap": "",
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791293374258_gx1sg",
+          "name": "长城",
+          "x": 59.29292268665222,
+          "y": 27.594690879829887,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263757424",
+      "name": "上海",
+      "bgImage": "/uploads/1791297512711_图片4.jpg",
+      "stations": [
+        {
+          "id": "st_1791263792605_jc6ab",
+          "name": "上海中心",
+          "x": 73.29965730921096,
+          "y": 50.81088726915708,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791263792606_yavlf",
+          "name": "迪士尼乐园",
+          "x": 72.67114939359935,
+          "y": 75.11323215477788,
+          "targetSubMap": "",
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791263809703_wzhex",
+          "name": "豫园",
+          "x": 49.99999743118055,
+          "y": 57.05618577111793,
+          "targetSubMap": "",
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791263809704_ttyen",
+          "name": "南京路",
+          "x": 32.087537249166346,
+          "y": 52.37220995248142,
+          "targetSubMap": "",
+          "lineType": "arc"
+        },
+        {
+          "id": "st_1791263832704_u62ny",
+          "name": "外滩",
+          "x": 57.9910244421115,
+          "y": 19.855960044831402,
+          "targetSubMap": "",
+          "lineType": "arc"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263760720",
+      "name": "西安",
+      "bgImage": "/uploads/1791297519676_图片5.jpg",
+      "stations": [
+        {
+          "id": "st_1791263855861_w99yr",
+          "name": "大雁塔",
+          "x": 37.9685719326472,
+          "y": 78.30375233438627,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791263855861_0tuks",
+          "name": "大唐不夜城",
+          "x": 71.36924087378085,
+          "y": 85.77095284289192,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791263865704_rhypc",
+          "name": "兵马俑",
+          "x": 90.80807301858994,
+          "y": 52.84739579250739,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791263865704_2lpzw",
+          "name": "古城墙",
+          "x": 41.60493622289215,
+          "y": 26.372784988953352,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791263887664_qymlg",
+          "name": "钟鼓楼",
+          "x": 44.47810939410078,
+          "y": 45.448085634288454,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263766711",
+      "name": "香港",
+      "bgImage": "/uploads/1791297525366_图片6.jpg",
+      "stations": [
+        {
+          "id": "st_1791295578625_u2j6i",
+          "name": "星光大道",
+          "x": 55.56677815685561,
+          "y": 59.839410460987054,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791295578625_3g693",
+          "name": "维多利亚港",
+          "x": 86.18405416633229,
+          "y": 58.210205196039496,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791295639424_ida87",
+          "name": "太平山",
+          "x": 53.05274649440918,
+          "y": 91.26952740967045,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791295639424_ewexb",
+          "name": "迪士尼乐园",
+          "x": 7.261505408341081,
+          "y": 69.07158139768667,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791295723165_yrgxu",
+          "name": "车公庙",
+          "x": 49.55106026995004,
+          "y": 23.589556414752476,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263770381",
+      "name": "成都",
+      "bgImage": "/uploads/1791297534967_图片2.jpg",
+      "stations": [
+        {
+          "id": "st_1791296008769_y1tdj",
+          "name": "大熊猫基地",
+          "x": 88.3838370086118,
+          "y": 28.74871807341496,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296008769_ctcgo",
+          "name": "武侯祠",
+          "x": 42.81705422788121,
+          "y": 88.82571562791738,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296259210_864s6",
+          "name": "锦里",
+          "x": 25.12906776412113,
+          "y": 84.61693341797033,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296259210_g2c5w",
+          "name": "宽窄巷子",
+          "x": 32.536474410396856,
+          "y": 55.69851083266322,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296260825_gu6o0",
+          "name": "都江堰",
+          "x": 15.836137371010583,
+          "y": 20.602683980013715,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263773485",
+      "name": "重庆",
+      "bgImage": "/uploads/1791297541547_图片7.jpg",
+      "stations": [
+        {
+          "id": "st_1791296479086_6v3gf",
+          "name": "磁器口古镇",
+          "x": 4.612793111289376,
+          "y": 87.53593880841287,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296479086_36ohs",
+          "name": "李子坝",
+          "x": 30.785633866986732,
+          "y": 58.34597035928593,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296480105_55r7h",
+          "name": "洪崖洞",
+          "x": 63.69247809593349,
+          "y": 71.37962801619331,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296480105_nbhln",
+          "name": "筷子楼",
+          "x": 62.0763104806703,
+          "y": 36.14802823163389,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296481211_zxp8r",
+          "name": "朝天门码头",
+          "x": 95.61166262522866,
+          "y": 59.160576876091454,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    },
+    {
+      "id": "city_1791263781064",
+      "name": "哈尔滨",
+      "bgImage": "/uploads/1791297546966_图片3.jpg",
+      "stations": [
+        {
+          "id": "st_1791296486898_qks4c",
+          "name": "圣索菲亚大教堂",
+          "x": 72.35690057343243,
+          "y": 82.03736424163434,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296486898_1j7aw",
+          "name": "松花江雾凇",
+          "x": 71.14477743080448,
+          "y": 46.941525735989586,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296487279_texx1",
+          "name": "东北虎园",
+          "x": 81.64983096654298,
+          "y": 22.97860541148008,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296487771_1boh2",
+          "name": "太阳岛",
+          "x": 51.57126208257069,
+          "y": 29.088130981531013,
+          "targetSubMap": "",
+          "lineType": "straight"
+        },
+        {
+          "id": "st_1791296487771_e3ss0",
+          "name": "冰雪大世界",
+          "x": 19.741862930466063,
+          "y": 35.06189527266727,
+          "targetSubMap": "",
+          "lineType": "straight"
+        }
+      ]
+    }
+  ],
+  "students": [
+    {
+      "id": "stu_1",
+      "name": "王振鑫 Him",
+      "avatar": "🐼",
+      "avatarImage": "/uploads/1791269873846_王振鑫.png",
+      "frameImage": "/uploads/1791269885592_Item_Faint_Glow.png",
+      "color": "#ef4444",
+      "points": 0,
+      "currentMap": "city_1791263770381",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791263729109",
+      "name": "曌 Jao",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791263739619_曌.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 0,
+      "currentMap": "city_1791263766711",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791263916349",
+      "name": "玛雅 Maya",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791263920053_玛雅.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 0,
+      "currentMap": "city_1791263760720",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271940048",
+      "name": "妮琳 Nirin",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274530428_妮琳.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 10,
+      "currentMap": "beijing",
+      "currentStationIndex": 1,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271947231",
+      "name": "阿莱雅 Araya",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274539716_阿莱雅.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 20,
+      "currentMap": "beijing",
+      "currentStationIndex": 2,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271947602",
+      "name": "阿丽娜 Alina",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274547851_阿丽娜.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 25,
+      "currentMap": "city_1791263757424",
+      "currentStationIndex": 2,
+      "stars": 0,
+      "stationPoints": 5
+    },
+    {
+      "id": "stu_1791271947937",
+      "name": "蔡文文 Oon",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274559429_蔡文文.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 30,
+      "currentMap": "city_1791263757424",
+      "currentStationIndex": 3,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271948320",
+      "name": "百合 Sayuri",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274570609_百合.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 10,
+      "currentMap": "city_1791263757424",
+      "currentStationIndex": 1,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271957753",
+      "name": "周俊荣 Sol",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274580044_周俊荣.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 0,
+      "currentMap": "city_1791263760720",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271958095",
+      "name": "泰坦 Titan",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274599608_泰坦.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 10,
+      "currentMap": "city_1791263757424",
+      "currentStationIndex": 1,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271958464",
+      "name": "艾尔 Elle",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274612844_艾尔.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 10,
+      "currentMap": "beijing",
+      "currentStationIndex": 1,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271958769",
+      "name": "珊妮 Sunny",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274624348_珊妮.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 3,
+      "currentMap": "city_1791263757424",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 3
+    },
+    {
+      "id": "stu_1791271959088",
+      "name": "廖玫玲 Rin",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274635772_廖美玲.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 0,
+      "currentMap": "city_1791263760720",
+      "currentStationIndex": 0,
+      "stars": 0,
+      "stationPoints": 0
+    },
+    {
+      "id": "stu_1791271959399",
+      "name": "丽莎 Risa",
+      "avatar": "🤖",
+      "avatarImage": "/uploads/1791274645093_丽莎.png",
+      "frameImage": "",
+      "color": "#3b82f6",
+      "points": 103,
+      "currentMap": "city_1791263773485",
+      "currentStationIndex": 0,
+      "stars": 2,
+      "stationPoints": 0
+    }
+  ]
+}
