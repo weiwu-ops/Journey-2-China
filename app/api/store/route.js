@@ -1,30 +1,53 @@
-import { NextResponse } from 'next/server';
+import { Redis } from '@upstash/redis';
 import fs from 'fs';
 import path from 'path';
 
-const dataFilePath = path.join(process.cwd(), 'data.json');
+// 自动兼容匹配 KV 和 Upstash 的环境变量
+const redis = new Redis({
+  url: process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
-// GET 请求：读取数据
+const LOCAL_FILE = path.join(process.cwd(), 'data.json');
+
+// 读取数据 API
 export async function GET() {
   try {
-    if (!fs.existsSync(dataFilePath)) {
-      return NextResponse.json({ error: "data.json 不存在" }, { status: 404 });
+    let data = await redis.get('game_data');
+
+    if (!data) {
+      const fileData = fs.readFileSync(LOCAL_FILE, 'utf-8');
+      data = JSON.parse(fileData);
+      await redis.set('game_data', data);
+    } else if (typeof data === 'string') {
+      data = JSON.parse(data);
     }
-    const fileData = fs.readFileSync(dataFilePath, 'utf8');
-    const json = JSON.parse(fileData);
-    return NextResponse.json(json);
+
+    return Response.json(data);
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Redis GET Error:', error);
+    try {
+      const fileData = fs.readFileSync(LOCAL_FILE, 'utf-8');
+      return Response.json(JSON.parse(fileData));
+    } catch (e) {
+      return Response.json({ error: error.message }, { status: 500 });
+    }
   }
 }
 
-// POST 请求：保存数据
+// 保存数据 API
 export async function POST(request) {
   try {
-    const body = await request.json();
-    fs.writeFileSync(dataFilePath, JSON.stringify(body, null, 2), 'utf8');
-    return NextResponse.json({ success: true });
+    const newData = await request.json();
+    await redis.set('game_data', newData);
+
+    if (process.env.NODE_ENV === 'development') {
+      fs.writeFileSync(LOCAL_FILE, JSON.stringify(newData, null, 2));
+    }
+
+    return Response.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('Redis POST Error:', error);
+    return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 }
