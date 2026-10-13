@@ -27,45 +27,69 @@ export default function AdminPage() {
 
   const handleSaveAll = async () => {
     await saveData(draft);
-    alert("保存成功！");
+    alert("保存成功！已完美同步至云端！");
   };
 
-  const uploadImage = async (e, type, index = null) => {
+  // 纯前端 Canvas 智能压缩 + Base64 编码 (解决 Vercel 只读文件系统问题)
+  const uploadImage = (e, type, index = null) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append('file', file);
-    try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      const result = await res.json();
-      if (result.url) {
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        // Canvas 动态缩放图片尺寸 (头像框/照片限制在 400px，地图限制在 1200px)
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = (type === 'mainMap' || type === 'subMap') ? 1200 : 400;
+
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // 转为高性能 JPEG/PNG Base64 字符
+        const compressedBase64 = canvas.toDataURL(type === 'studentFrame' ? 'image/png' : 'image/jpeg', 0.85);
+
         setDraft(prev => {
           const next = JSON.parse(JSON.stringify(prev));
           if (type === 'mainMap') {
-            next.mainMap.bgImage = result.url;
+            next.mainMap.bgImage = compressedBase64;
           } else if (type === 'subMap') {
             const m = next.subMaps.find(x => x.id === activeMapId);
-            if(m) m.bgImage = result.url;
+            if(m) m.bgImage = compressedBase64;
           } else if (type === 'studentAvatar') {
-            next.students[index].avatarImage = result.url;
-            next.students[index].avatar = result.url; // 兼容多形态字段
+            next.students[index].avatarImage = compressedBase64;
+            next.students[index].avatar = compressedBase64;
           } else if (type === 'studentFrame') {
-            // 当前选中的头像框
-            next.students[index].frameImage = result.url;
-            next.students[index].avatarFrame = result.url; // 兼容多形态字段
+            next.students[index].frameImage = compressedBase64;
+            next.students[index].avatarFrame = compressedBase64;
 
-            // 保持个人专属头像框资源池 (为新功能1提供支持)
             if (!next.students[index].frameImages) {
               next.students[index].frameImages = [];
             }
-            if (!next.students[index].frameImages.includes(result.url)) {
-              next.students[index].frameImages.push(result.url);
+            if (!next.students[index].frameImages.includes(compressedBase64)) {
+              next.students[index].frameImages.push(compressedBase64);
             }
           }
           return next;
         });
-      }
-    } catch (err) { alert('上传失败'); }
+      };
+    };
+    reader.readAsDataURL(file);
   };
 
   const handlePointerDown = (e, stationId) => {
@@ -500,12 +524,4 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-blue-800 text-sm">
-              提示：修改完成后点击左下角“保存所有更改”，前台页面的排版与标题将即时更新。
-            </div>
-          </div>
-        )}
-
-      </div>
-    </div>
-  );
-}
+              提示：修改完成后点击左下角“保存所有更改”，前台
