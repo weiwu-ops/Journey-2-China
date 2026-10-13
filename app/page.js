@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useStore } from './store';
 import { useRouter } from 'next/navigation';
-import { Award, Check, Sparkles, X, Plus, Minus, Settings, ChevronRight } from 'lucide-react';
+import { Award, Check, Sparkles, X, Settings } from 'lucide-react';
 
 export default function GamePage() {
   const router = useRouter();
@@ -18,17 +18,17 @@ export default function GamePage() {
 
   if (!data) return <div className="p-10 text-center text-white text-xl font-bold">加载冒险大地图中...</div>;
 
-  const currentMapData = activeMapId === 'main' ? data.mainMap : data.subMaps.find(m => m.id === activeMapId);
+  const currentMapData = activeMapId === 'main' ? data.mainMap : data.subMaps?.find(m => m.id === activeMapId);
   const achievementsList = data.achievements || [];
 
-  // 选择学生弹窗
+  // 弹窗选中学生
   const handleSelectStudent = (student) => {
     setSelectedStudent(student);
     setShowFramePicker(false);
     setCustomPointsInput("");
   };
 
-  // 快捷/自定义加分并实时提交
+  // 快捷/自定义加分
   const handleUpdatePoints = async (delta) => {
     if (!selectedStudent) return;
     const newPoints = Math.max(0, (selectedStudent.points || 0) + delta);
@@ -48,7 +48,7 @@ export default function GamePage() {
     setSelectedStudent(prev => ({ ...prev, points: newPoints, stars: newStars }));
   };
 
-  // 前台更换头像框，即时同步
+  // 更换专属头像框
   const handleSelectFrame = (frameUrl) => {
     if (!selectedStudent) return;
 
@@ -66,7 +66,7 @@ export default function GamePage() {
     setSelectedStudent(prev => ({ ...prev, frameImage: frameUrl, avatarFrame: frameUrl }));
   };
 
-  // 前台 Toggle 切换成就解锁/灰度，即时同步
+  // 成就解锁/灰度 Toggle
   const handleToggleAchievement = (achId) => {
     if (!selectedStudent) return;
 
@@ -91,12 +91,12 @@ export default function GamePage() {
   };
 
   return (
-    <div className="flex h-screen bg-slate-900 text-white font-sans overflow-hidden">
+    <div className="flex h-screen bg-slate-900 text-white font-sans overflow-hidden select-none">
       
       {/* 主地图画布 */}
       <div className="flex-1 flex flex-col relative bg-slate-800 overflow-hidden">
         
-        {/* 顶部标题与导航 */}
+        {/* 顶部标题与地图导航 */}
         <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-auto">
           <div className="bg-slate-900/80 backdrop-blur-md px-6 py-3 rounded-2xl border border-slate-700 shadow-xl">
             <h1 className="text-2xl font-black text-amber-400 tracking-wider">{data.settings?.title || "中国之旅"}</h1>
@@ -129,7 +129,7 @@ export default function GamePage() {
           </div>
         </div>
 
-        {/* 地图背景与站点渲染 */}
+        {/* 地图背景、白色连线与站点 */}
         <div className="flex-1 relative w-full h-full overflow-hidden">
           {currentMapData?.bgImage ? (
             <img src={currentMapData.bgImage} className="w-full h-full object-cover select-none pointer-events-none" />
@@ -137,7 +137,7 @@ export default function GamePage() {
             <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">请在后台上传地图背景</div>
           )}
 
-          {/* 站点连线 */}
+          {/* 1. 连线颜色修改回白色 (#ffffff) */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
             {currentMapData?.stations?.map((s, i) => {
               if (i === 0) return null;
@@ -155,34 +155,70 @@ export default function GamePage() {
                 const cy2 = s.y;
                 d = `M ${prev.x} ${prev.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${s.x} ${s.y}`;
               }
-              return <path key={`path-${i}`} d={d} fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,4" />;
+              return <path key={`path-${i}`} d={d} fill="none" stroke="#ffffff" strokeWidth="2.5" strokeDasharray="5,5" />;
             })}
           </svg>
 
-          {/* 站点标记 */}
-          {currentMapData?.stations?.map((s, i) => (
-            <div 
-              key={s.id} 
-              className="absolute z-20 flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2 cursor-pointer transition hover:scale-110"
-              style={{ left: `${s.x}%`, top: `${s.y}%` }}
-              onClick={() => {
-                if (activeMapId === 'main' && s.targetSubMap) {
-                  setActiveMapId(s.targetSubMap);
-                }
-              }}
-            >
-              <div className="w-8 h-8 bg-amber-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center text-slate-950 font-black text-sm">
-                {i + 1}
+          {/* 站点标记与停留的学生头像列表 */}
+          {currentMapData?.stations?.map((s, i) => {
+            // 筛选当前停留在本站点的学生
+            const studentsAtStation = (data.students || []).filter(stu => {
+              const stuMap = stu.currentMap || 'main';
+              const stuIdx = stu.currentStationIndex || 0;
+              return stuMap === activeMapId && stuIdx === i;
+            });
+
+            return (
+              <div 
+                key={s.id} 
+                className="absolute z-20 flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2 cursor-pointer"
+                style={{ left: `${s.x}%`, top: `${s.y}%` }}
+                onClick={() => {
+                  if (activeMapId === 'main' && s.targetSubMap) {
+                    setActiveMapId(s.targetSubMap);
+                  }
+                }}
+              >
+                {/* 2. 恢复：地图上的学生小头像列表 (鼠标悬停平滑变大) */}
+                {studentsAtStation.length > 0 && (
+                  <div className="flex items-center -space-x-2 mb-1.5 z-30">
+                    {studentsAtStation.map((stu) => (
+                      <div 
+                        key={stu.id}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSelectStudent(stu);
+                        }}
+                        className="w-9 h-9 rounded-full bg-slate-900 border-2 border-amber-400 relative shadow-xl overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-150 hover:z-40"
+                        title={`${stu.name} (${stu.points || 0}分)`}
+                      >
+                        {stu.avatarImage ? (
+                          <img src={stu.avatarImage} className="w-full h-full object-cover rounded-full" />
+                        ) : (
+                          <span className="text-sm flex items-center justify-center h-full">{stu.avatar}</span>
+                        )}
+                        {stu.frameImage && (
+                          <img src={stu.frameImage} className="absolute inset-0 w-full h-full object-cover scale-110 pointer-events-none" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 站点序号圆点与名称 */}
+                <div className="w-8 h-8 bg-amber-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center text-slate-950 font-black text-sm transition hover:scale-110">
+                  {i + 1}
+                </div>
+                <span className="mt-1 px-2 py-0.5 bg-slate-900/90 text-amber-300 font-bold text-xs rounded shadow border border-slate-700 whitespace-nowrap">
+                  {s.name}
+                </span>
               </div>
-              <span className="mt-1 px-2 py-0.5 bg-slate-900/90 text-amber-300 font-bold text-xs rounded shadow border border-slate-700 whitespace-nowrap">
-                {s.name}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      {/* 右侧学生侧边栏 */}
+      {/* 右侧学生榜单栏 */}
       <div className="w-80 bg-slate-950 border-l border-slate-800 p-4 flex flex-col overflow-y-auto">
         <h2 className="text-lg font-black text-amber-400 mb-4 flex items-center justify-between">
           <span>学生榜单 ({data.students?.length || 0}人)</span>
@@ -237,11 +273,11 @@ export default function GamePage() {
               <X className="w-6 h-6" />
             </button>
 
-            {/* 左侧：加分与头像框选择面板 */}
+            {/* 左侧加分面板 */}
             <div className="w-full md:w-80 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col justify-between shadow-2xl relative">
               <div className="flex flex-col items-center">
                 
-                {/* 可点击学生头像展关头像框面板 */}
+                {/* 点击更换头像框 */}
                 <div 
                   onClick={() => setShowFramePicker(!showFramePicker)}
                   className="w-24 h-24 rounded-full relative bg-slate-800 flex items-center justify-center cursor-pointer border-2 border-amber-400 shadow-xl transition hover:scale-105"
@@ -268,7 +304,7 @@ export default function GamePage() {
                   </span>
                 </div>
 
-                {/* 前台学生专属头像框选择器 */}
+                {/* 专属头像框选择列表 */}
                 {showFramePicker && (
                   <div className="mt-4 w-full bg-slate-950 p-3 rounded-2xl border border-slate-800">
                     <div className="text-xs font-bold text-slate-400 mb-2 text-center">专属头像框列表 (点击即更换)</div>
@@ -293,7 +329,7 @@ export default function GamePage() {
                 )}
               </div>
 
-              {/* 快捷加分按钮 */}
+              {/* 加分按钮操作区 */}
               <div className="mt-6 space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => handleUpdatePoints(1)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-lg shadow">+1 分</button>
@@ -326,7 +362,7 @@ export default function GamePage() {
               </div>
             </div>
 
-            {/* 右侧：成就系统面板（并列相同高度、响应式滚动） */}
+            {/* 右侧成就面板 */}
             <div className="flex-1 bg-slate-900 border border-slate-800 rounded-3xl p-6 flex flex-col shadow-2xl overflow-hidden min-w-[320px]">
               <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-800">
                 <h3 className="text-xl font-black text-amber-400 flex items-center">
@@ -355,17 +391,14 @@ export default function GamePage() {
                             : 'border-slate-800 opacity-60 grayscale hover:opacity-80'
                         }`}
                       >
-                        {/* 背景图 */}
                         {ach.bgImage ? (
                           <img src={ach.bgImage} className="absolute inset-0 w-full h-full object-cover" />
                         ) : (
                           <div className="absolute inset-0 bg-slate-800" />
                         )}
 
-                        {/* 黑色遮罩保证文字可读 */}
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/60 to-transparent" />
 
-                        {/* 解锁标志 */}
                         <div className="absolute top-2 right-2 z-10">
                           {isUnlocked ? (
                             <span className="bg-amber-500 text-slate-950 p-1 rounded-full flex items-center justify-center shadow">
@@ -378,7 +411,6 @@ export default function GamePage() {
                           )}
                         </div>
 
-                        {/* 文字内容 */}
                         <div className="relative z-10">
                           <div className="font-black text-amber-300 text-sm">{ach.title}</div>
                           <div className="text-slate-300 text-[11px] line-clamp-1">{ach.description}</div>
