@@ -30,7 +30,6 @@ export default function AdminPage() {
     alert("保存成功！已完美同步至云端！");
   };
 
-  // 纯前端 Canvas 智能压缩 + Base64 编码 (解决 Vercel 只读文件系统问题)
   const uploadImage = (e, type, index = null) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -40,7 +39,6 @@ export default function AdminPage() {
       const img = new Image();
       img.src = event.target.result;
       img.onload = () => {
-        // Canvas 动态缩放图片尺寸 (头像框/照片限制在 400px，地图限制在 1200px)
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
@@ -61,7 +59,6 @@ export default function AdminPage() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // 转为高性能 JPEG/PNG Base64 字符
         const compressedBase64 = canvas.toDataURL(type === 'studentFrame' ? 'image/png' : 'image/jpeg', 0.85);
 
         setDraft(prev => {
@@ -524,4 +521,12 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 text-blue-800 text-sm">
-              提示：修改完成后点击左下角“保存所有更改”，前台
+              提示：修改完成后点击左下角“保存所有更改”，前台页面的排版与标题将即时更新。
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
