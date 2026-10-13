@@ -204,7 +204,7 @@ export default function GamePage() {
           </div>
         </div>
 
-        {/* 地图背景、白色虚线与站点 */}
+        {/* 地图背景、深灰色细实线与站点 */}
         <div className="flex-1 relative w-full h-full overflow-hidden">
           {currentMapData?.bgImage ? (
             <img src={currentMapData.bgImage} className="w-full h-full object-cover select-none pointer-events-none" />
@@ -212,7 +212,7 @@ export default function GamePage() {
             <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold">请在后台上传地图背景</div>
           )}
 
-          {/* 白色连线 */}
+          {/* 深灰色细实线连线 (宽度1.25，颜色 #475569) */}
           <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" viewBox="0 0 100 100" preserveAspectRatio="none">
             {currentMapData?.stations?.map((s, i) => {
               if (i === 0) return null;
@@ -230,21 +230,19 @@ export default function GamePage() {
                 const cy2 = s.y;
                 d = `M ${prev.x} ${prev.y} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${s.x} ${s.y}`;
               }
-              return <path key={`path-${i}`} d={d} fill="none" stroke="#ffffff" strokeWidth="2.5" strokeDasharray="5,5" />;
+              return <path key={`path-${i}`} d={d} fill="none" stroke="#475569" strokeWidth="1.25" />;
             })}
           </svg>
 
-          {/* 1. 恢复：主页与城市地图站点上的学生头像渲染 */}
+          {/* 地图站点与无外橙框的学生头像 */}
           {currentMapData?.stations?.map((s, i) => {
             let studentsAtStation = [];
 
             if (activeMapId === 'main') {
-              // 冒险主页：根据站点的 targetSubMap 匹配停留在该城市的学生
               if (s.targetSubMap) {
                 studentsAtStation = (data.students || []).filter(stu => (stu.currentMap || 'main') === s.targetSubMap);
               }
             } else {
-              // 城市分站：匹配停留在当前分站且处于对应站点索引的学生
               studentsAtStation = (data.students || []).filter(stu => {
                 const stuMap = stu.currentMap || 'main';
                 const stuIdx = stu.currentStationIndex || 0;
@@ -263,7 +261,7 @@ export default function GamePage() {
                   }
                 }}
               >
-                {/* 地图学生头像列表 (鼠标悬停平滑放大) */}
+                {/* 学生小头像（移除了橙色外部边框） */}
                 {studentsAtStation.length > 0 && (
                   <div className="flex items-center -space-x-2 mb-1.5 z-30">
                     {studentsAtStation.map((stu) => {
@@ -275,7 +273,7 @@ export default function GamePage() {
                             e.stopPropagation();
                             handleSelectStudent(stu);
                           }}
-                          className="w-10 h-10 rounded-full bg-slate-900 border-2 border-amber-400 relative shadow-xl overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-150 hover:z-40"
+                          className="w-10 h-10 rounded-full bg-slate-900 relative shadow-xl overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-150 hover:z-40"
                           title={`${stu.name}`}
                         >
                           {stu.avatarImage ? (
@@ -303,13 +301,12 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* 2. 修改：侧边栏逻辑拆分 */}
+      {/* 侧边栏 */}
       <div className="w-80 bg-slate-950 border-l border-slate-800 p-4 flex flex-col overflow-y-auto">
         <h2 className="text-lg font-black text-amber-400 mb-3 flex items-center justify-between">
           <span>学生榜单 ({filteredStudents.length}人)</span>
         </h2>
 
-        {/* 分站地图下的侧栏切换选项卡 */}
         {activeMapId !== 'main' && (
           <div className="grid grid-cols-2 gap-2 mb-4 bg-slate-900 p-1 rounded-xl border border-slate-800">
             <button 
@@ -330,7 +327,7 @@ export default function GamePage() {
         <div className="space-y-3 flex-1 overflow-y-auto pr-1">
           {filteredStudents.map((stu) => {
             const frameToUse = stu.frameImage || DEFAULT_BLUE_FRAME;
-            const displayScore = (stu.stationPoints || 0) % 10; // 10分循环算法
+            const displayScore = (stu.stationPoints || 0) % 10;
 
             return (
               <div 
@@ -356,7 +353,6 @@ export default function GamePage() {
                   </div>
                 </div>
 
-                {/* 主页只显示星星，分站显示 10分循环分值 */}
                 {activeMapId !== 'main' && (
                   <div className="text-right">
                     <span className="text-xl font-black text-amber-400">{displayScore}</span>
@@ -369,7 +365,7 @@ export default function GamePage() {
         </div>
       </div>
 
-      {/* 3. 恢复：50分庆祝与选择下一个城市弹窗 */}
+      {/* 50分庆祝与选择下一个城市弹窗 */}
       {celebrationStudent && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl space-y-6 animate-pulse">
@@ -433,7 +429,7 @@ export default function GamePage() {
                   </span>
                 </div>
 
-                {/* 4. 专属头像框选择器 (包含深蓝色默认框) */}
+                {/* 专属头像框选择器 */}
                 {showFramePicker && (
                   <div className="mt-4 w-full bg-slate-950 p-3 rounded-2xl border border-slate-800">
                     <div className="text-xs font-bold text-slate-400 mb-2 text-center">专属头像框列表 (点击即更换)</div>
@@ -458,7 +454,7 @@ export default function GamePage() {
                 )}
               </div>
 
-              {/* 加分区域 */}
+              {/* 加分操作区 */}
               <div className="mt-6 space-y-3">
                 <div className="grid grid-cols-2 gap-2">
                   <button onClick={() => handleUpdatePoints(1)} className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl text-lg shadow">+1 分</button>
