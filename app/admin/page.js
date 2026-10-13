@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { useRouter } from 'next/navigation';
-import { Map as MapIcon, Users, Settings, Plus, X, Upload, Save, ArrowLeft, Trash2, Type, RotateCcw } from 'lucide-react';
+import { Map as MapIcon, Users, Settings, Plus, X, Upload, Save, ArrowLeft, Trash2, Type, RotateCcw, Award } from 'lucide-react';
 
 export default function AdminPage() {
   const router = useRouter();
@@ -20,7 +20,11 @@ export default function AdminPage() {
   }, []);
 
   useEffect(() => {
-    if (data) setDraft(JSON.parse(JSON.stringify(data))); 
+    if (data) {
+      const copy = JSON.parse(JSON.stringify(data));
+      if (!copy.achievements) copy.achievements = [];
+      setDraft(copy);
+    }
   }, [data]);
 
   if (!draft) return <div className="p-10 text-white">加载中...</div>;
@@ -42,7 +46,7 @@ export default function AdminPage() {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = (type === 'mainMap' || type === 'subMap') ? 1200 : 400;
+        const maxDim = (type === 'mainMap' || type === 'subMap') ? 1200 : (type === 'achievementBg' ? 600 : 400);
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -59,7 +63,7 @@ export default function AdminPage() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedBase64 = canvas.toDataURL(type === 'studentFrame' ? 'image/png' : 'image/jpeg', 0.85);
+        const compressedBase64 = canvas.toDataURL((type === 'studentFrame' || type === 'achievementBg') ? 'image/png' : 'image/jpeg', 0.85);
 
         setDraft(prev => {
           const next = JSON.parse(JSON.stringify(prev));
@@ -80,6 +84,11 @@ export default function AdminPage() {
             }
             if (!next.students[index].frameImages.includes(compressedBase64)) {
               next.students[index].frameImages.push(compressedBase64);
+            }
+          } else if (type === 'achievementBg') {
+            if (!next.achievements) next.achievements = [];
+            if (next.achievements[index]) {
+              next.achievements[index].bgImage = compressedBase64;
             }
           }
           return next;
@@ -191,6 +200,30 @@ export default function AdminPage() {
     });
   };
 
+  // 成就管理相关函数
+  const handleAddAchievement = () => {
+    setDraft(p => ({
+      ...p,
+      achievements: [
+        ...(p.achievements || []),
+        {
+          id: `ach_${Date.now()}`,
+          title: "新成就名称",
+          description: "描述内容...",
+          bgImage: ""
+        }
+      ]
+    }));
+  };
+
+  const handleDeleteAchievement = (id) => {
+    if (!confirm("确定删除该成就吗？全班学生的该成就解锁记录也会被清空。")) return;
+    setDraft(p => ({
+      ...p,
+      achievements: (p.achievements || []).filter(a => a.id !== id)
+    }));
+  };
+
   const activeMapData = activeMapId === 'main' ? draft.mainMap : draft.subMaps.find(m => m.id === activeMapId);
 
   return (
@@ -203,6 +236,7 @@ export default function AdminPage() {
         </div>
         <button onClick={() => setTab('maps')} className={`p-4 text-left flex items-center ${tab === 'maps' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}><MapIcon className="w-5 h-5 mr-3"/> 地图与路线</button>
         <button onClick={() => setTab('students')} className={`p-4 text-left flex items-center ${tab === 'students' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}><Users className="w-5 h-5 mr-3"/> 学生名单与头像</button>
+        <button onClick={() => setTab('achievements')} className={`p-4 text-left flex items-center ${tab === 'achievements' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}><Award className="w-5 h-5 mr-3"/> 全班成就系统</button>
         <button onClick={() => setTab('settings')} className={`p-4 text-left flex items-center ${tab === 'settings' ? 'bg-blue-600' : 'hover:bg-gray-800'}`}><Type className="w-5 h-5 mr-3"/> 标题文案设置</button>
         
         <div className="mt-auto p-4 space-y-3">
@@ -394,7 +428,7 @@ export default function AdminPage() {
                 <button onClick={() => {
                   setDraft(p => {
                     if(p.students.length >= 30) { alert('已达上限 30 人'); return p; }
-                    return {...p, students: [...p.students, { id: `stu_${Date.now()}`, name: "新学生", avatar: "🤖", avatarImage: "", frameImage: "", frameImages: [], color: "#3b82f6", points: 0, stationPoints: 0, currentMap: "main", currentStationIndex: 0, stars: 0 }]};
+                    return {...p, students: [...p.students, { id: `stu_${Date.now()}`, name: "新学生", avatar: "🤖", avatarImage: "", frameImage: "", frameImages: [], color: "#3b82f6", points: 0, stationPoints: 0, currentMap: "main", currentStationIndex: 0, stars: 0, unlockedAchievements: [] }]};
                   });
                 }} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 shadow"><Plus className="w-5 h-5 mr-1" /> 添加学生</button>
               </div>
@@ -491,6 +525,87 @@ export default function AdminPage() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* 成就系统管理 */}
+        {tab === 'achievements' && (
+          <div className="p-8 overflow-y-auto h-full bg-gray-50">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-2xl font-bold flex items-center"><Award className="mr-2 text-yellow-600"/> 全班成就卡片管理</h2>
+                <p className="text-xs text-gray-500 mt-1">提示：在此处新增/修改成就，全班学生将自动同步该列表；前台点击成就卡片可切换高亮与灰度。</p>
+              </div>
+
+              <button 
+                onClick={handleAddAchievement} 
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center shadow"
+              >
+                <Plus className="w-5 h-5 mr-1" /> 新增成就
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {(draft.achievements || []).map((ach, index) => (
+                <div key={ach.id} className="bg-white p-5 rounded-2xl shadow border flex gap-4 relative">
+                  <button 
+                    onClick={() => handleDeleteAchievement(ach.id)}
+                    className="absolute top-3 right-3 text-red-500 hover:bg-red-50 p-2 rounded-lg"
+                    title="删除成就"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+
+                  <div className="w-36 h-28 bg-gray-100 rounded-xl overflow-hidden relative flex flex-col items-center justify-center border shrink-0">
+                    {ach.bgImage ? (
+                      <img src={ach.bgImage} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs text-gray-400 font-bold text-center px-2">无背景图</span>
+                    )}
+                    <label className="absolute bottom-1 right-1 bg-black/60 hover:bg-black text-white text-[10px] px-2 py-0.5 rounded cursor-pointer font-bold">
+                      换图
+                      <input type="file" accept="image/*" className="hidden" onChange={e => uploadImage(e, 'achievementBg', index)} />
+                    </label>
+                  </div>
+
+                  <div className="flex-1 space-y-3">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">成就名称：</label>
+                      <input 
+                        type="text" 
+                        value={ach.title}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDraft(p => {
+                            const next = { ...p };
+                            next.achievements[index].title = val;
+                            return next;
+                          });
+                        }}
+                        className="w-full border p-2 rounded-lg font-bold text-sm"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-gray-500 mb-1">成就描述：</label>
+                      <input 
+                        type="text" 
+                        value={ach.description}
+                        onChange={e => {
+                          const val = e.target.value;
+                          setDraft(p => {
+                            const next = { ...p };
+                            next.achievements[index].description = val;
+                            return next;
+                          });
+                        }}
+                        className="w-full border p-2 rounded-lg text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

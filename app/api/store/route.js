@@ -16,22 +16,35 @@ export async function GET() {
     let data = await redis.get('game_data');
 
     if (!data) {
-      // 数据库为空时从本地 data.json 读取初始数据存入 Redis
       const fileData = fs.readFileSync(LOCAL_FILE, 'utf-8');
       data = JSON.parse(fileData);
       await redis.set('game_data', data);
     } else if (typeof data === 'string') {
-      // 容错处理：确保返回给前端的是 JavaScript 对象而非未解析字符串
       data = JSON.parse(data);
     }
 
-    // 确保学生列表中的头像和头像框字段完整存在
+    // 补全默认防空容错
+    if (!data.achievements) data.achievements = [];
+    if (!data.settings) data.settings = { title: "中国之旅", subtitle: "Journey to China" };
+
     if (data && Array.isArray(data.students)) {
-      data.students = data.students.map((student) => ({
-        ...student,
-        avatar: student.avatar || '',
-        avatarFrame: student.avatarFrame || '',
-      }));
+      data.students = data.students.map((student) => {
+        const frameImages = Array.isArray(student.frameImages) ? student.frameImages : [];
+        const currentFrame = student.frameImage || student.avatarFrame || "";
+        if (currentFrame && !frameImages.includes(currentFrame)) {
+          frameImages.push(currentFrame);
+        }
+
+        return {
+          ...student,
+          avatar: student.avatar || "🤖",
+          avatarImage: student.avatarImage || student.avatar || "",
+          frameImage: currentFrame,
+          avatarFrame: currentFrame,
+          frameImages: frameImages,
+          unlockedAchievements: Array.isArray(student.unlockedAchievements) ? student.unlockedAchievements : [],
+        };
+      });
     }
 
     return Response.json(data);
@@ -55,33 +68,47 @@ export async function POST(request) {
       return Response.json({ success: false, error: 'Invalid payload' }, { status: 400 });
     }
 
-    // 从数据库获取旧数据以防属性遗漏
     let currentData = await redis.get('game_data');
     if (typeof currentData === 'string') {
       currentData = JSON.parse(currentData);
     }
 
-    // 数据深合并：严格保留 avatar 与 avatarFrame
     const mergedData = {
       ...currentData,
       ...newData,
+      settings: newData.settings || currentData?.settings || { title: "中国之旅", subtitle: "Journey to China" },
+      achievements: newData.achievements || currentData?.achievements || [],
       students: newData.students
         ? newData.students.map((newStudent) => {
             const existingStudent = currentData?.students?.find((s) => s.id === newStudent.id);
+            const frameImages = Array.isArray(newStudent.frameImages)
+              ? newStudent.frameImages
+              : (existingStudent?.frameImages || []);
+            
+            const frameImage = newStudent.frameImage ?? newStudent.avatarFrame ?? existingStudent?.frameImage ?? "";
+            
+            if (frameImage && !frameImages.includes(frameImage)) {
+              frameImages.push(frameImage);
+            }
+
             return {
               ...existingStudent,
               ...newStudent,
-              avatar: newStudent.avatar !== undefined ? newStudent.avatar : (existingStudent?.avatar || ''),
-              avatarFrame: newStudent.avatarFrame !== undefined ? newStudent.avatarFrame : (existingStudent?.avatarFrame || ''),
+              avatarImage: newStudent.avatarImage ?? existingStudent?.avatarImage ?? "",
+              avatar: newStudent.avatar ?? existingStudent?.avatar ?? "🤖",
+              frameImage: frameImage,
+              avatarFrame: frameImage,
+              frameImages: frameImages,
+              unlockedAchievements: Array.isArray(newStudent.unlockedAchievements)
+                ? newStudent.unlockedAchievements
+                : (existingStudent?.unlockedAchievements || []),
             };
           })
         : currentData?.students || [],
     };
 
-    // 写入 Upstash Redis 云数据库
     await redis.set('game_data', mergedData);
 
-    // 本地开发环境同步更新本地文件以便调试
     if (process.env.NODE_ENV === 'development') {
       fs.writeFileSync(LOCAL_FILE, JSON.stringify(mergedData, null, 2));
     }
