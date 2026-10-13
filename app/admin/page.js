@@ -40,15 +40,27 @@ export default function AdminPage() {
       const result = await res.json();
       if (result.url) {
         setDraft(prev => {
-          const next = { ...prev };
-          if (type === 'mainMap') next.mainMap.bgImage = result.url;
-          else if (type === 'subMap') {
+          const next = JSON.parse(JSON.stringify(prev));
+          if (type === 'mainMap') {
+            next.mainMap.bgImage = result.url;
+          } else if (type === 'subMap') {
             const m = next.subMaps.find(x => x.id === activeMapId);
             if(m) m.bgImage = result.url;
           } else if (type === 'studentAvatar') {
             next.students[index].avatarImage = result.url;
+            next.students[index].avatar = result.url; // 兼容多形态字段
           } else if (type === 'studentFrame') {
+            // 当前选中的头像框
             next.students[index].frameImage = result.url;
+            next.students[index].avatarFrame = result.url; // 兼容多形态字段
+
+            // 保持个人专属头像框资源池 (为新功能1提供支持)
+            if (!next.students[index].frameImages) {
+              next.students[index].frameImages = [];
+            }
+            if (!next.students[index].frameImages.includes(result.url)) {
+              next.students[index].frameImages.push(result.url);
+            }
           }
           return next;
         });
@@ -131,7 +143,6 @@ export default function AdminPage() {
     setActiveMapId('main');
   };
 
-  // 一键清空全班分数与进度功能 (带确认提醒)
   const handleResetAllScores = () => {
     if (!confirm("⚠️ 警告：确定要重置【全班所有学生】的总分数、本站进度分、星星和站点进度吗？\n此操作不可撤销！")) return;
     setDraft(prev => {
@@ -148,10 +159,9 @@ export default function AdminPage() {
     alert("已成功清空全班分数与星星！请不要忘记点击左下角的【保存所有更改】。");
   };
 
-  // 修改单个学生的总分数，并自动按照 50分=1颗星 更新星星数
   const handleStudentPointChange = (index, newPointsStr) => {
     const pts = parseInt(newPointsStr) || 0;
-    const calculatedStars = Math.floor(pts / 50); // 每 50 分一颗星
+    const calculatedStars = Math.floor(pts / 50);
     setDraft(prev => {
       const next = { ...prev };
       next.students[index].points = pts;
@@ -182,7 +192,7 @@ export default function AdminPage() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         
-        {/* ================= 地图与路线管理 ================= */}
+        {/* 地图与路线管理 */}
         {tab === 'maps' && (
           <div className="flex h-full">
             <div className="flex-1 p-6 flex flex-col relative bg-gray-200 overflow-hidden">
@@ -343,7 +353,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ================= 学生名单与分数管理 ================= */}
+        {/* 学生名单与分数管理 */}
         {tab === 'students' && (
           <div className="p-8 overflow-y-auto h-full bg-gray-50">
             <div className="flex justify-between items-center mb-6">
@@ -363,7 +373,7 @@ export default function AdminPage() {
                 <button onClick={() => {
                   setDraft(p => {
                     if(p.students.length >= 30) { alert('已达上限 30 人'); return p; }
-                    return {...p, students: [...p.students, { id: `stu_${Date.now()}`, name: "新学生", avatar: "🤖", avatarImage: "", frameImage: "", color: "#3b82f6", points: 0, stationPoints: 0, currentMap: "main", currentStationIndex: 0, stars: 0 }]};
+                    return {...p, students: [...p.students, { id: `stu_${Date.now()}`, name: "新学生", avatar: "🤖", avatarImage: "", frameImage: "", frameImages: [], color: "#3b82f6", points: 0, stationPoints: 0, currentMap: "main", currentStationIndex: 0, stars: 0 }]};
                   });
                 }} className="bg-blue-600 text-white px-5 py-2.5 rounded-xl font-bold flex items-center hover:bg-blue-700 shadow"><Plus className="w-5 h-5 mr-1" /> 添加学生</button>
               </div>
@@ -399,7 +409,6 @@ export default function AdminPage() {
                         }}/>
                       </td>
 
-                      {/* 1. 姓名旁增加一栏：学生目前获得的总分数及星星 */}
                       <td className="p-4">
                         <div className="flex items-center space-x-2">
                           <span className="text-xl font-black text-blue-600">{student.points || 0}</span>
@@ -409,7 +418,6 @@ export default function AdminPage() {
                         </div>
                       </td>
 
-                      {/* 2. 旁边为：分数设置输入栏 */}
                       <td className="p-4">
                         <input 
                           type="number" 
@@ -425,7 +433,7 @@ export default function AdminPage() {
                             上传照片
                             <input type="file" accept="image/*" className="hidden" onChange={e => uploadImage(e, 'studentAvatar', i)} />
                           </label>
-                          {student.avatarImage && <button onClick={() => setDraft(p => { p.students[i].avatarImage=""; return {...p}; })} className="text-red-500 text-xs underline">清除</button>}
+                          {student.avatarImage && <button onClick={() => setDraft(p => { p.students[i].avatarImage=""; p.students[i].avatar=""; return {...p}; })} className="text-red-500 text-xs underline">清除</button>}
                         </div>
                         <input type="text" className="border w-20 text-center rounded p-1 text-sm" value={student.avatar} onChange={e => {
                           setDraft(p => { p.students[i].avatar = e.target.value; return {...p}; });
@@ -438,7 +446,7 @@ export default function AdminPage() {
                             上传头像框
                             <input type="file" accept="image/*" className="hidden" onChange={e => uploadImage(e, 'studentFrame', i)} />
                           </label>
-                          {student.frameImage && <button onClick={() => setDraft(p => { p.students[i].frameImage=""; return {...p}; })} className="text-red-500 text-xs underline">移除框</button>}
+                          {student.frameImage && <button onClick={() => setDraft(p => { p.students[i].frameImage=""; p.students[i].avatarFrame=""; return {...p}; })} className="text-red-500 text-xs underline">移除框</button>}
                         </div>
                       </td>
 
@@ -466,7 +474,7 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* ================= 标题设置 ================= */}
+        {/* 标题设置 */}
         {tab === 'settings' && (
           <div className="p-10 max-w-xl bg-white m-8 rounded-3xl shadow-xl border space-y-6">
             <h2 className="text-2xl font-bold flex items-center"><Type className="mr-2 text-blue-600"/> 网页标题与副标题设置</h2>
