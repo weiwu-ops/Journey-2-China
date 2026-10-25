@@ -25,7 +25,7 @@ const AvatarWithStars = ({ student, sizeClass = "w-10 h-10", isHoverable = false
   const stars = getStarPositions(student.stars || 0);
   
   return (
-    <div className={`${sizeClass} rounded-full bg-slate-900 relative flex items-center justify-center shrink-0 ${isHoverable ? 'cursor-pointer transition-transform duration-200 hover:scale-150 hover:z-40 shadow-xl' : ''}`}>
+    <div className={`${sizeClass} rounded-full bg-slate-900 relative flex items-center justify-center shrink-0 ${isHoverable ? 'cursor-pointer transition-transform duration-200 hover:scale-125 hover:z-40 shadow-xl' : ''}`}>
       {student.avatarImage ? (
         <img src={student.avatarImage} className="w-[85%] h-[85%] object-cover rounded-full z-10" />
       ) : (
@@ -70,13 +70,20 @@ export default function GamePage() {
     return (stu.currentMap || 'main') === activeMapId;
   });
 
-  // 添加顶部提示 Toast 队列 (可叠加排列，3秒自动消失)
+  // 添加顶部提示 Toast 队列
   const addToast = (msg) => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, msg }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3000);
+  };
+
+  // 修复 Bug 1：补回打开个人 Profile 的核心函数
+  const handleSelectStudent = (student) => {
+    setSelectedStudent(student);
+    setShowFramePicker(false);
+    setCustomPointsInput("");
   };
 
   const handleUpdatePoints = async (delta) => {
@@ -90,23 +97,20 @@ export default function GamePage() {
     let newStationIdx = selectedStudent.currentStationIndex || 0;
     let oldStationIdx = newStationIdx;
     
-    // 检查分站跨越逻辑并弹窗动画
+    // 分站跨越逻辑
     if (activeMapId !== 'main' && currentMapData?.stations?.length) {
       const stationCount = currentMapData.stations.length;
       const steps = Math.floor(newStationPts / 10) - Math.floor(oldStationPts / 10);
       
       if (steps > 0) {
         newStationIdx = Math.min(stationCount - 1, newStationIdx + steps);
-        // 弹出中下部微型地图
         setMiniMapAnim({ show: true, oldIdx: oldStationIdx, newIdx: newStationIdx, showConfetti: false });
         
-        // 延迟1.5秒移动到达后，喷洒彩带并弹顶上 Toast
         setTimeout(() => {
           setMiniMapAnim(p => ({ ...p, showConfetti: true }));
           addToast(`🎉 ${selectedStudent.name} 前进到了 ${currentMapData.stations[newStationIdx]?.name || '下一站'}！`);
         }, 1500);
 
-        // 再过 2.5 秒后自动关闭微型地图
         setTimeout(() => {
           setMiniMapAnim({ show: false, oldIdx: 0, newIdx: 0, showConfetti: false });
         }, 4000);
@@ -119,7 +123,6 @@ export default function GamePage() {
     saveData({ ...data, students: data.students.map(s => s.id === selectedStudent.id ? updatedStudent : s) });
     setSelectedStudent(updatedStudent);
 
-    // 50分 换城市庆祝弹窗
     if (Math.floor(newTotal / 50) > Math.floor(oldTotal / 50)) {
       setCelebrationStudent(updatedStudent);
     }
@@ -200,8 +203,10 @@ export default function GamePage() {
             const studentsAtStation = (data.students || []).filter(stu => activeMapId === 'main' ? (s.targetSubMap && (stu.currentMap || 'main') === s.targetSubMap) : (stu.currentMap === activeMapId && (stu.currentStationIndex || 0) === i));
             return (
               <div key={s.id} className="absolute z-20 flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${s.x}%`, top: `${s.y}%` }}>
+                
+                {/* 修复 Bug 2：移除叠加的负边距，改为 flex-wrap 网格排布，最多5个一行（宽度220px完美包裹5个头像+间距） */}
                 {studentsAtStation.length > 0 && (
-                  <div className="flex items-center -space-x-4 mb-2 z-30">
+                  <div className="flex flex-wrap justify-center gap-2 mb-2 z-30" style={{ maxWidth: '220px' }}>
                     {studentsAtStation.map(stu => (
                       <div key={stu.id} onClick={(e) => { e.stopPropagation(); handleSelectStudent(stu); }}>
                         <AvatarWithStars student={stu} sizeClass="w-9 h-9" isHoverable={true} />
@@ -209,6 +214,7 @@ export default function GamePage() {
                     ))}
                   </div>
                 )}
+
                 <div className="w-8 h-8 bg-amber-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center text-slate-950 font-black text-sm">{i + 1}</div>
                 <span className="mt-1 px-2 py-0.5 bg-slate-900/90 text-amber-300 font-bold text-xs rounded shadow border border-slate-700 whitespace-nowrap">{s.name}</span>
               </div>
@@ -255,14 +261,12 @@ export default function GamePage() {
                 
                 <h3 className="text-2xl font-black text-white mt-5">{selectedStudent.name}</h3>
                 
-                {/* 城市状态文本框 */}
                 <div className="bg-slate-800/80 border border-slate-700 px-3 py-1 rounded-full mt-2 text-xs font-bold text-slate-300 relative z-10 shadow-inner">
                   {(selectedStudent.currentMap || 'main') === 'main' 
                     ? "选择城市开始冒险" 
                     : `${data.subMaps?.find(m=>m.id===selectedStudent.currentMap)?.name || '未知城市'} - ${data.subMaps?.find(m=>m.id===selectedStudent.currentMap)?.stations?.[selectedStudent.currentStationIndex]?.name || `第${selectedStudent.currentStationIndex+1}站`}`}
                 </div>
 
-                {/* 悬浮覆盖的头像框列表 */}
                 {showFramePicker && (
                   <div className="absolute top-48 w-[90%] bg-slate-950 p-4 rounded-2xl border border-slate-700 shadow-2xl z-50">
                     <div className="text-xs font-bold text-slate-400 mb-2 text-center">专属头像框列表 (点击即更换)</div>
@@ -314,7 +318,6 @@ export default function GamePage() {
                   </div>
                 </>
               ) : (
-                // 覆盖在成就面板上的微型动画地图
                 <div className="absolute inset-0 z-50 bg-slate-900 cursor-pointer" onClick={() => setMiniMapAnim({ show: false, oldIdx: 0, newIdx: 0, showConfetti: false })}>
                   <div className="w-full h-full relative border-2 border-amber-500 rounded-3xl overflow-hidden">
                     <img src={currentMapData?.bgImage} className="w-full h-full object-cover opacity-80" />
@@ -326,7 +329,6 @@ export default function GamePage() {
                       })}
                     </svg>
                     
-                    {/* 起终点标记 */}
                     {currentMapData?.stations?.[miniMapAnim.oldIdx] && (
                       <div className="absolute w-4 h-4 bg-slate-600 rounded-full border border-white transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${currentMapData.stations[miniMapAnim.oldIdx].x}%`, top: `${currentMapData.stations[miniMapAnim.oldIdx].y}%` }} />
                     )}
@@ -334,12 +336,10 @@ export default function GamePage() {
                       <div className="absolute w-6 h-6 bg-amber-500 rounded-full border-2 border-white transform -translate-x-1/2 -translate-y-1/2 shadow-xl animate-pulse" style={{ left: `${currentMapData.stations[miniMapAnim.newIdx].x}%`, top: `${currentMapData.stations[miniMapAnim.newIdx].y}%` }} />
                     )}
 
-                    {/* 移动的头像 */}
                     <div className="absolute z-40 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-[1500ms] ease-in-out" style={{ left: `${currentMapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.x || 50}%`, top: `${currentMapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.y || 50}%` }}>
                       <AvatarWithStars student={selectedStudent} sizeClass="w-16 h-16" />
                     </div>
 
-                    {/* 终点爆发彩带特效 */}
                     {miniMapAnim.showConfetti && (
                       <div className="absolute z-50 text-5xl animate-ping" style={{ left: `${currentMapData?.stations?.[miniMapAnim.newIdx]?.x}%`, top: `${currentMapData?.stations?.[miniMapAnim.newIdx]?.y}%` }}>✨🎊</div>
                     )}
