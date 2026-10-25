@@ -34,7 +34,7 @@ export default function AdminPage() {
     alert("保存成功！已完美同步至云端！");
   };
 
-  const uploadImage = (e, type, index = null) => {
+ const uploadImage = (e, type, index = null) => {
     const file = e.target.files[0];
     if (!file) return;
 
@@ -46,7 +46,9 @@ export default function AdminPage() {
         const canvas = document.createElement('canvas');
         let width = img.width;
         let height = img.height;
-        const maxDim = (type === 'mainMap' || type === 'subMap') ? 1200 : (type === 'achievementBg' ? 600 : 400);
+        
+        // 【核心修复】极度压缩成就图片尺寸至 300px，避免突破 Vercel 4.5MB 上限
+        const maxDim = (type === 'mainMap' || type === 'subMap') ? 1200 : (type === 'achievementBg' ? 300 : 400);
 
         if (width > maxDim || height > maxDim) {
           if (width > height) {
@@ -63,7 +65,10 @@ export default function AdminPage() {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        const compressedBase64 = canvas.toDataURL((type === 'studentFrame' || type === 'achievementBg') ? 'image/png' : 'image/jpeg', 0.85);
+        // 【核心修复】成就背景使用 JPEG 格式并降低质量至 0.7，极大缩减 Base64 体积
+        const mimeType = (type === 'studentFrame') ? 'image/png' : 'image/jpeg';
+        const quality = type === 'achievementBg' ? 0.7 : 0.85;
+        const compressedBase64 = canvas.toDataURL(mimeType, quality);
 
         setDraft(prev => {
           const next = JSON.parse(JSON.stringify(prev));
