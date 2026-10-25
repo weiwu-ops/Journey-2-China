@@ -6,11 +6,10 @@ import { Award, Check, Settings, MapPin, X } from 'lucide-react';
 
 const DEFAULT_BLUE_FRAME = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='none' stroke='%231d4ed8' stroke-width='8'/></svg>";
 
-// 三角函数计算最多7颗星的环绕绝对坐标 (下半圆分布)
 const getStarPositions = (count) => {
   const maxStars = Math.min(count, 7);
   const positions = [];
-  const radius = 58; // 半径跨度
+  const radius = 58; 
   const angles = [90, 135, 45, 165, 15, 190, -10];
   for (let i = 0; i < maxStars; i++) {
     const angleRad = (angles[i] * Math.PI) / 180;
@@ -19,7 +18,6 @@ const getStarPositions = (count) => {
   return positions;
 };
 
-// 全局支持7颗星环绕展示的头像组件
 const AvatarWithStars = ({ student, sizeClass = "w-10 h-10", isHoverable = false }) => {
   const frameToUse = student.frameImage || DEFAULT_BLUE_FRAME;
   const stars = getStarPositions(student.stars || 0);
@@ -33,7 +31,6 @@ const AvatarWithStars = ({ student, sizeClass = "w-10 h-10", isHoverable = false
       )}
       <img src={frameToUse} className="absolute inset-0 w-full h-full object-cover scale-[1.15] z-20 pointer-events-none" />
       
-      {/* 环绕星星渲染，位于最高图层 */}
       {stars.map((pos, idx) => (
         <div key={idx} className={`absolute z-30 flex items-center justify-center drop-shadow-md ${pos.isNewest ? 'animate-pulse scale-125' : ''}`} style={{ transform: `translate(${pos.x}%, ${pos.y}%)`, width: '16px', height: '16px' }}>
           <span className="text-[12px] leading-none">⭐</span>
@@ -53,10 +50,12 @@ export default function GamePage() {
   const [sidebarTab, setSidebarTab] = useState("current"); 
 
   const [celebrationStudent, setCelebrationStudent] = useState(null);
-  const [toasts, setToasts] = useState([]); // Toast 队列状态
+  const [toasts, setToasts] = useState([]); 
   
-  // 10分跨站微型地图动画状态
-  const [miniMapAnim, setMiniMapAnim] = useState({ show: false, oldIdx: 0, newIdx: 0, showConfetti: false });
+  // 10分动画：新增 mapData，用于锁定学生所在真实地图
+  const [miniMapAnim, setMiniMapAnim] = useState({ show: false, mapData: null, oldIdx: 0, newIdx: 0, showConfetti: false });
+  // 50分飞行跨越动画
+  const [flightAnim, setFlightAnim] = useState({ show: false, student: null, fromX: 50, fromY: 50, toX: 50, toY: 50, moving: false });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -70,7 +69,6 @@ export default function GamePage() {
     return (stu.currentMap || 'main') === activeMapId;
   });
 
-  // 添加顶部提示 Toast 队列
   const addToast = (msg) => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, { id, msg }]);
@@ -79,7 +77,6 @@ export default function GamePage() {
     }, 3000);
   };
 
-  // 修复 Bug 1：补回打开个人 Profile 的核心函数
   const handleSelectStudent = (student) => {
     setSelectedStudent(student);
     setShowFramePicker(false);
@@ -97,22 +94,25 @@ export default function GamePage() {
     let newStationIdx = selectedStudent.currentStationIndex || 0;
     let oldStationIdx = newStationIdx;
     
-    // 分站跨越逻辑
-    if (activeMapId !== 'main' && currentMapData?.stations?.length) {
-      const stationCount = currentMapData.stations.length;
+    // 【修改点1】判断学生当前真正所在的地图，而不是教师当前浏览的地图
+    const stuMapId = selectedStudent.currentMap || 'main';
+    const stuMapData = stuMapId === 'main' ? data.mainMap : data.subMaps?.find(m => m.id === stuMapId);
+    
+    if (stuMapData?.stations?.length) {
+      const stationCount = stuMapData.stations.length;
       const steps = Math.floor(newStationPts / 10) - Math.floor(oldStationPts / 10);
       
       if (steps > 0) {
         newStationIdx = Math.min(stationCount - 1, newStationIdx + steps);
-        setMiniMapAnim({ show: true, oldIdx: oldStationIdx, newIdx: newStationIdx, showConfetti: false });
+        setMiniMapAnim({ show: true, mapData: stuMapData, oldIdx: oldStationIdx, newIdx: newStationIdx, showConfetti: false });
         
         setTimeout(() => {
           setMiniMapAnim(p => ({ ...p, showConfetti: true }));
-          addToast(`🎉 ${selectedStudent.name} 前进到了 ${currentMapData.stations[newStationIdx]?.name || '下一站'}！`);
+          addToast(`🎉 ${selectedStudent.name} 前进到了 ${stuMapData.stations[newStationIdx]?.name || '下一站'}！`);
         }, 1500);
 
         setTimeout(() => {
-          setMiniMapAnim({ show: false, oldIdx: 0, newIdx: 0, showConfetti: false });
+          setMiniMapAnim({ show: false, mapData: null, oldIdx: 0, newIdx: 0, showConfetti: false });
         }, 4000);
       }
     }
@@ -128,13 +128,33 @@ export default function GamePage() {
     }
   };
 
+  // 【修改点2】选择新城市后，触发飞机航线移动动画
   const handleSelectNextCity = (cityId) => {
     if (!celebrationStudent) return;
+    
+    const fromCityId = celebrationStudent.currentMap || 'main';
+    const fromStation = data.mainMap?.stations?.find(s => s.targetSubMap === fromCityId) || data.mainMap?.stations?.[0] || { x: 50, y: 50 };
+    const toStation = data.mainMap?.stations?.find(s => s.targetSubMap === cityId) || { x: 50, y: 50 };
+
+    setFlightAnim({ show: true, student: celebrationStudent, fromX: fromStation.x, fromY: fromStation.y, toX: toStation.x, toY: toStation.y, moving: false });
+
+    // 存储数据
     saveData({ ...data, students: data.students.map(s => s.id === celebrationStudent.id ? { ...s, currentMap: cityId, currentStationIndex: 0, stationPoints: 0 } : s) });
     setCelebrationStudent(null);
+    
     if (selectedStudent?.id === celebrationStudent.id) {
       setSelectedStudent(prev => ({ ...prev, currentMap: cityId, currentStationIndex: 0, stationPoints: 0 }));
     }
+
+    // 稍微延迟以触发CSS过渡动画
+    setTimeout(() => {
+      setFlightAnim(prev => ({ ...prev, moving: true }));
+    }, 100);
+
+    // 3秒后自动关闭飞行弹窗
+    setTimeout(() => {
+      setFlightAnim(prev => ({ ...prev, show: false }));
+    }, 3000);
   };
 
   const handleSelectFrame = (frameUrl) => {
@@ -149,9 +169,7 @@ export default function GamePage() {
     const isUnlocked = currentUnlocked.includes(ach.id);
     const newUnlocked = isUnlocked ? currentUnlocked.filter(id => id !== ach.id) : [...currentUnlocked, ach.id];
 
-    if (!isUnlocked) {
-      addToast(`Congratulations！获得成就 ${ach.title}`);
-    }
+    if (!isUnlocked) addToast(`Congratulations！获得成就 ${ach.title}`);
 
     saveData({ ...data, students: data.students.map(s => s.id === selectedStudent.id ? { ...s, unlockedAchievements: newUnlocked } : s) });
     setSelectedStudent(prev => ({ ...prev, unlockedAchievements: newUnlocked }));
@@ -160,14 +178,11 @@ export default function GamePage() {
   return (
     <div className="flex h-screen bg-slate-900 text-white font-sans overflow-hidden select-none relative">
       
-      {/* 顶部最上层排队 Toast 提示 */}
-      <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-3 pointer-events-auto">
-        {toasts.map((t) => (
-          <div key={t.id} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} className="bg-amber-500 text-slate-950 font-black px-6 py-3 rounded-full shadow-2xl border-2 border-white text-lg animate-bounce cursor-pointer transition hover:scale-105">
-            {t.msg}
-          </div>
-        ))}
-      </div>
+      {toasts.map((t) => (
+        <div key={t.id} onClick={() => setToasts(prev => prev.filter(x => x.id !== t.id))} className="fixed top-12 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-3 pointer-events-auto bg-amber-500 text-slate-950 font-black px-6 py-3 rounded-full shadow-2xl border-2 border-white text-lg animate-bounce cursor-pointer transition hover:scale-105">
+          {t.msg}
+        </div>
+      ))}
 
       <div className="flex-1 flex flex-col relative bg-slate-800 overflow-hidden">
         <div className="absolute top-4 left-4 right-4 z-20 flex justify-between items-center pointer-events-auto">
@@ -203,8 +218,6 @@ export default function GamePage() {
             const studentsAtStation = (data.students || []).filter(stu => activeMapId === 'main' ? (s.targetSubMap && (stu.currentMap || 'main') === s.targetSubMap) : (stu.currentMap === activeMapId && (stu.currentStationIndex || 0) === i));
             return (
               <div key={s.id} className="absolute z-20 flex flex-col items-center transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${s.x}%`, top: `${s.y}%` }}>
-                
-                {/* 修复 Bug 2：移除叠加的负边距，改为 flex-wrap 网格排布，最多5个一行（宽度220px完美包裹5个头像+间距） */}
                 {studentsAtStation.length > 0 && (
                   <div className="flex flex-wrap justify-center gap-2 mb-2 z-30" style={{ maxWidth: '220px' }}>
                     {studentsAtStation.map(stu => (
@@ -214,7 +227,6 @@ export default function GamePage() {
                     ))}
                   </div>
                 )}
-
                 <div className="w-8 h-8 bg-amber-500 border-2 border-white rounded-full shadow-lg flex items-center justify-center text-slate-950 font-black text-sm">{i + 1}</div>
                 <span className="mt-1 px-2 py-0.5 bg-slate-900/90 text-amber-300 font-bold text-xs rounded shadow border border-slate-700 whitespace-nowrap">{s.name}</span>
               </div>
@@ -318,30 +330,31 @@ export default function GamePage() {
                   </div>
                 </>
               ) : (
-                <div className="absolute inset-0 z-50 bg-slate-900 cursor-pointer" onClick={() => setMiniMapAnim({ show: false, oldIdx: 0, newIdx: 0, showConfetti: false })}>
+                <div className="absolute inset-0 z-50 bg-slate-900 cursor-pointer" onClick={() => setMiniMapAnim({ show: false, mapData: null, oldIdx: 0, newIdx: 0, showConfetti: false })}>
                   <div className="w-full h-full relative border-2 border-amber-500 rounded-3xl overflow-hidden">
-                    <img src={currentMapData?.bgImage} className="w-full h-full object-cover opacity-80" />
+                    {/* 使用真实学生所在地图的数据渲染 */}
+                    <img src={miniMapAnim.mapData?.bgImage} className="w-full h-full object-cover opacity-80" />
                     <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
-                      {currentMapData?.stations?.map((s, i) => {
+                      {miniMapAnim.mapData?.stations?.map((s, i) => {
                         if (i === 0) return null;
-                        const prev = currentMapData.stations[i - 1];
+                        const prev = miniMapAnim.mapData.stations[i - 1];
                         return <path key={i} d={`M ${prev.x} ${prev.y} L ${s.x} ${s.y}`} fill="none" stroke="#475569" strokeWidth="1" />;
                       })}
                     </svg>
                     
-                    {currentMapData?.stations?.[miniMapAnim.oldIdx] && (
-                      <div className="absolute w-4 h-4 bg-slate-600 rounded-full border border-white transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${currentMapData.stations[miniMapAnim.oldIdx].x}%`, top: `${currentMapData.stations[miniMapAnim.oldIdx].y}%` }} />
+                    {miniMapAnim.mapData?.stations?.[miniMapAnim.oldIdx] && (
+                      <div className="absolute w-4 h-4 bg-slate-600 rounded-full border border-white transform -translate-x-1/2 -translate-y-1/2" style={{ left: `${miniMapAnim.mapData.stations[miniMapAnim.oldIdx].x}%`, top: `${miniMapAnim.mapData.stations[miniMapAnim.oldIdx].y}%` }} />
                     )}
-                    {currentMapData?.stations?.[miniMapAnim.newIdx] && (
-                      <div className="absolute w-6 h-6 bg-amber-500 rounded-full border-2 border-white transform -translate-x-1/2 -translate-y-1/2 shadow-xl animate-pulse" style={{ left: `${currentMapData.stations[miniMapAnim.newIdx].x}%`, top: `${currentMapData.stations[miniMapAnim.newIdx].y}%` }} />
+                    {miniMapAnim.mapData?.stations?.[miniMapAnim.newIdx] && (
+                      <div className="absolute w-6 h-6 bg-amber-500 rounded-full border-2 border-white transform -translate-x-1/2 -translate-y-1/2 shadow-xl animate-pulse" style={{ left: `${miniMapAnim.mapData.stations[miniMapAnim.newIdx].x}%`, top: `${miniMapAnim.mapData.stations[miniMapAnim.newIdx].y}%` }} />
                     )}
 
-                    <div className="absolute z-40 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-[1500ms] ease-in-out" style={{ left: `${currentMapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.x || 50}%`, top: `${currentMapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.y || 50}%` }}>
+                    <div className="absolute z-40 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-[1500ms] ease-in-out" style={{ left: `${miniMapAnim.mapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.x || 50}%`, top: `${miniMapAnim.mapData?.stations?.[miniMapAnim.showConfetti ? miniMapAnim.newIdx : miniMapAnim.oldIdx]?.y || 50}%` }}>
                       <AvatarWithStars student={selectedStudent} sizeClass="w-16 h-16" />
                     </div>
 
                     {miniMapAnim.showConfetti && (
-                      <div className="absolute z-50 text-5xl animate-ping" style={{ left: `${currentMapData?.stations?.[miniMapAnim.newIdx]?.x}%`, top: `${currentMapData?.stations?.[miniMapAnim.newIdx]?.y}%` }}>✨🎊</div>
+                      <div className="absolute z-50 text-5xl animate-ping" style={{ left: `${miniMapAnim.mapData?.stations?.[miniMapAnim.newIdx]?.x}%`, top: `${miniMapAnim.mapData?.stations?.[miniMapAnim.newIdx]?.y}%` }}>✨🎊</div>
                     )}
                   </div>
                 </div>
@@ -351,6 +364,7 @@ export default function GamePage() {
         </div>
       )}
       
+      {/* 50分奖励：选择下个城市弹窗 */}
       {celebrationStudent && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl animate-pulse">
@@ -362,6 +376,38 @@ export default function GamePage() {
                 <button key={map.id} onClick={() => handleSelectNextCity(map.id)} className="bg-amber-500 text-slate-950 font-black p-3 rounded-2xl shadow hover:scale-105"><MapPin className="w-4 h-4 inline" /> {map.name}</button>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 新增：跨城市航线飞行特效弹窗 */}
+      {flightAnim.show && (
+        <div className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" onClick={() => setFlightAnim(prev => ({ ...prev, show: false }))}>
+          <div className="bg-slate-900 border-2 border-amber-400 rounded-3xl overflow-hidden w-full max-w-4xl h-[60vh] relative shadow-2xl" onClick={e => e.stopPropagation()}>
+            
+            <img src={data.mainMap?.bgImage} className="w-full h-full object-cover opacity-80" />
+            
+            <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 100 100" preserveAspectRatio="none">
+               {data.mainMap?.stations?.map((s, i) => {
+                  if (i === 0) return null;
+                  const prev = data.mainMap.stations[i - 1];
+                  return <path key={i} d={`M ${prev.x} ${prev.y} L ${s.x} ${s.y}`} fill="none" stroke="#475569" strokeWidth="1" />;
+               })}
+            </svg>
+
+            {/* 终点站标记 */}
+            <div className="absolute w-8 h-8 bg-amber-500 rounded-full border-2 border-white transform -translate-x-1/2 -translate-y-1/2 shadow-xl animate-pulse flex items-center justify-center" style={{ left: `${flightAnim.toX}%`, top: `${flightAnim.toY}%` }}>
+               <MapPin className="w-5 h-5 text-slate-950" />
+            </div>
+
+            {/* 飞行中的头像与飞机 */}
+            <div className="absolute z-40 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-[2000ms] ease-in-out" style={{ left: `${flightAnim.moving ? flightAnim.toX : flightAnim.fromX}%`, top: `${flightAnim.moving ? flightAnim.toY : flightAnim.fromY}%` }}>
+              <div className="relative drop-shadow-2xl">
+                <AvatarWithStars student={flightAnim.student} sizeClass="w-16 h-16" />
+                <span className="absolute -top-3 -right-3 text-3xl animate-bounce">✈️</span>
+              </div>
+            </div>
+            
           </div>
         </div>
       )}
